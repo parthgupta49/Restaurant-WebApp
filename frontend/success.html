@@ -1,0 +1,206 @@
+<html>
+    <head>
+        <title>Confirming Purchase</title>
+    <style>
+        * {
+            border: 0;
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        :root {
+            --hue: 223;
+            --bg: hsl(var(--hue),90%,95%);
+            --fg: hsl(var(--hue),90%,5%);
+            --trans-dur: 0.3s;
+            font-size: calc(16px + (24 - 16) * (100vw - 320px) / (1280 - 320));
+        }
+        body {
+            background-color: var(--bg);
+            color: var(--fg);
+            font: 1em/1.5 sans-serif;
+            height: 100vh;
+            display: grid;
+            place-items: center;
+            transition: background-color var(--trans-dur);
+        }
+        main {
+            padding: 1.5em 0;
+            margin-bottom: 10rem;
+        }
+        .ip {
+            width: 16em;
+            height: 8em;
+        }
+        .ip__track {
+            stroke: hsl(var(--hue),90%,90%);
+            transition: stroke var(--trans-dur);
+        }
+        .ip__worm1,
+        .ip__worm2 {
+            animation: worm1 2s linear infinite;
+        }
+        .ip__worm2 {
+            animation-name: worm2;
+        }
+        
+        /* Dark theme */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --bg: hsl(var(--hue),90%,5%);
+                --fg: hsl(var(--hue),90%,95%);
+            }
+            .ip__track {
+                stroke: hsl(var(--hue),90%,15%);
+            }
+        }
+        
+        /* Animation */
+        @keyframes worm1 {
+            from {
+                stroke-dashoffset: 0;
+            }
+            50% {
+                animation-timing-function: steps(1);
+                stroke-dashoffset: -358;
+            }
+            50.01% {
+                animation-timing-function: linear;
+                stroke-dashoffset: 358;
+            }
+            to {
+                stroke-dashoffset: 0;
+            }
+        }
+        @keyframes worm2 {
+            from {
+                stroke-dashoffset: 358;
+            }
+            50% {
+                stroke-dashoffset: 0;
+            }
+            to {
+                stroke-dashoffset: -358;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <main>
+        <svg class="ip" viewBox="0 0 256 128" width="256px" height="128px" xmlns="http://www.w3.org/2000/svg">
+            <defs>
+                <linearGradient id="grad1" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stop-color="#5ebd3e" />
+                    <stop offset="33%" stop-color="#ffb900" />
+                    <stop offset="67%" stop-color="#f78200" />
+                    <stop offset="100%" stop-color="#e23838" />
+                </linearGradient>
+                <linearGradient id="grad2" x1="1" y1="0" x2="0" y2="0">
+                    <stop offset="0%" stop-color="#e23838" />
+                    <stop offset="33%" stop-color="#973999" />
+                    <stop offset="67%" stop-color="#009cdf" />
+                    <stop offset="100%" stop-color="#5ebd3e" />
+                </linearGradient>
+            </defs>
+            <g fill="none" stroke-linecap="round" stroke-width="16">
+                <g class="ip__track" stroke="#ddd">
+                    <path d="M8,64s0-56,60-56,60,112,120,112,60-56,60-56"/>
+                    <path d="M248,64s0-56-60-56-60,112-120,112S8,64,8,64"/>
+                </g>
+                <g stroke-dasharray="180 656">
+                    <path class="ip__worm1" stroke="url(#grad1)" stroke-dashoffset="0" d="M8,64s0-56,60-56,60,112,120,112,60-56,60-56"/>
+                    <path class="ip__worm2" stroke="url(#grad2)" stroke-dashoffset="358" d="M248,64s0-56-60-56-60,112-120,112S8,64,8,64"/>
+                </g>
+            </g>
+        </svg>
+        <h2 style="text-align : center;">Please Wait</h2>
+        <h3 style="text-align : center;">We are confirming your order</h3>
+    </main>
+
+        <script>
+
+            let returnable;  //contains the current user info
+            let sendable = []; //has the cart cookie modified so that the data inside can be added to orders table
+            let token; //contains the token cookie (the key for logged in user)
+
+            //get the cart cookie 
+            const cartCookie = document.cookie.split('; ').find(cookie => cookie.startsWith('cart='));
+            // Parse the JSON string back into an array
+            let productsArray = [];
+            if (cartCookie) {
+                const cartJSON = cartCookie.split('=')[1];
+                productsArray = JSON.parse(cartJSON);
+            }
+
+            //push the required data alone from cart cookie to sendable
+            productsArray.forEach(function(element){
+                sendable.push({
+                    productId : element.productId,
+                    quantity : element.quantity
+                })
+            });
+
+            token = document.cookie.split(';').find(cookie => cookie.trim().startsWith('token='));
+            if(token){
+                token = token.split('=')[1];
+            }
+
+            //get the user info of the given token
+            fetch('http://localhost:4000/api/v1/auth/auth', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ token: token }),
+            })
+            .then(response => {
+              if (!response.ok) {
+                  // Handle authentication failure
+                  //handleAuthenticationFailure();
+                  console.log("!response : auth failure");
+                  throw new Error('Authentication failed');
+              }
+              // Authentication successful, parse response JSON
+              return response.json();
+            })
+            .then(data => {
+              // Check if the token is valid
+              if (data.success) {
+                  // Token is valid, update UI with user details
+                  //return updateUserProfile(data);
+                  console.log("data.success");
+                  console.log("returnable in data.success : "+data);
+                  returnable = data;
+              } else {
+                  // Token is invalid, handle authentication failure
+                  //return handleAuthenticationFailure();
+                  console.log("data : auth failure");
+              }
+            }).then(function(){
+                console.log("calling the backend");
+                fetch('http://localhost:4000/pre_payment_process',{
+                method : 'POST',
+                headers : {
+                    'Content-Type': 'application/json',
+                },
+                body : JSON.stringify({
+                    cart : sendable,
+                    UserId : returnable. _id
+                })
+                }).then(function(recived_json){
+                    return recived_json.json();
+                }).then(function(recived_value){
+                    console.log(recived_value);
+                    document.cookie = 'cart=; expires= Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                    window.location.href = 'http://localhost:5173/orderstest.html';
+                })
+            })
+            .catch(error => {
+              console.error('Authentication error:', error);
+            });
+            
+            
+        </script>
+    </body>
+</html>

@@ -1,0 +1,38 @@
+<html>
+    <head>
+        <title>orders</title>
+    </head>
+    <body>
+        <table>
+            <tr>
+                <th>date</th>
+                <th>details</th>
+                <th>order status</th>
+            </tr>
+            <tr>
+                <th id="orderId">66198079670898f01dad038d</th>
+                <th><button onclick="view_details(this.parentNode.parentNode.querySelector('#orderId').innerHTML)" id="btn1">view details</button></th>
+                <th>delivered</th>
+            </tr>
+        </table>
+
+        <script>
+            function view_details(orderId)
+            {
+                fetch('http://localhost:4000/api/v1/orders/getOrderDetails',{
+                    method : 'POST',
+                    headers : {
+                        'Content-Type': 'application/json'
+                    },
+                    body : JSON.stringify({
+                        orderId : orderId
+                    })
+                }).then(function(recived_json){
+                    return recived_json.json()
+                }).then(function(recived_value){
+                    console.log(recived_value);
+                })
+            }
+        </script>
+    </body>
+</html>
